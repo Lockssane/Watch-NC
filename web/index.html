@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Watch-NC</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/cesium@1.117.0/Build/Cesium/Widgets/widgets.css"
+    />
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="map-stage" aria-label="Carte de surveillance maritime">
+        <div id="map"></div>
+        <div id="globeMap" hidden></div>
+        <div id="trackHover" class="floating-tooltip" hidden></div>
+        <div id="globeHover" class="floating-tooltip" hidden></div>
+        <div id="staticTrackCard" class="static-track-card" hidden></div>
+
+        <nav class="side-tools" aria-label="Outils">
+          <button id="toggleLayersPanel" type="button" class="active" title="Couches">L</button>
+          <button id="toggleSurveillancePanel" type="button" class="active" title="Surveillance">S</button>
+          <button id="toggleSurfacePanel" type="button" class="active" title="Surface">D</button>
+          <button id="toggleMapSearchPanel" type="button" title="Recherche">R</button>
+          <button id="toggleGlobe" type="button" title="Globe">3D</button>
+          <button id="toggleAis" type="button" title="AIS">AIS</button>
+          <button id="focusNc" type="button" title="Recentrer NC">NC</button>
+        </nav>
+
+        <section class="command-bar open" aria-label="Couches">
+          <button id="toggleZones" type="button" class="active">Zones maritimes</button>
+          <button id="toggleProtected" type="button" class="active">Aires protegees</button>
+          <button id="toggleTracks" type="button" class="active">Traces</button>
+        </section>
+
+        <section id="mapSearchPanel" class="map-search" hidden>
+          <input id="mapSearchInput" type="search" placeholder="Rechercher navire, ville, port" />
+          <button id="runMapSearch" type="button">Aller</button>
+          <button type="button" data-minimize-target="search" aria-label="Fermer">x</button>
+        </section>
+
+        <section class="panel left-panel">
+          <header class="panel-title">
+            <div>
+              <span>Watch-NC</span>
+              <strong>Surveillance</strong>
+            </div>
+            <button type="button" data-minimize-target="surveillance" aria-label="Reduire">x</button>
+          </header>
+
+          <div class="coord-hud" aria-label="Coordonnees">
+            <div><span id="cursorLat">LAT --</span><span id="cursorLon">LON --</span></div>
+            <div><span id="centerLat">LAT --</span><span id="centerLon">LON --</span></div>
+            <div><span id="zoomLevel">Z --</span></div>
+            <label>
+              Format
+              <select id="coordFormat">
+                <option value="dm">DM</option>
+                <option value="dms">DMS</option>
+                <option value="dd">DD</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="summary-grid">
+            <div><span>Pistes</span><strong id="vesselCount">0</strong></div>
+            <div><span>Alertes</span><strong id="alertCount">0</strong></div>
+            <div><span>km2 mer</span><strong id="maritimeArea">--</strong></div>
+            <div><span>Aires</span><strong id="protectedCount">--</strong></div>
+          </div>
+
+          <div class="fleet-tabs" role="tablist" aria-label="Filtres flotte">
+            <button type="button" class="active" data-filter="all">Tout</button>
+            <button type="button" data-filter="priority">Veille</button>
+            <button type="button" data-filter="cargo">Cargo</button>
+            <button type="button" data-filter="fishing">Peche</button>
+            <button type="button" data-filter="tanker">Tanker</button>
+            <button type="button" data-filter="passenger">Passagers</button>
+          </div>
+
+          <input id="searchInput" class="fleet-search" type="search" placeholder="Filtrer les pistes" />
+          <div id="fleetList" class="fleet-list"></div>
+
+          <section class="alerts-section">
+            <header>
+              <strong>Alertes</strong>
+              <button id="createSar" type="button">SAR</button>
+            </header>
+            <div id="alertList" class="alert-list"></div>
+          </section>
+        </section>
+
+        <section class="panel right-panel">
+          <header class="panel-title">
+            <div>
+              <span id="detailSubtitle">Selectionne un navire</span>
+              <strong id="detailTitle">Situation surface</strong>
+            </div>
+            <button type="button" data-minimize-target="surface" aria-label="Reduire">x</button>
+          </header>
+          <div id="detailCard" class="detail-card empty"></div>
+        </section>
+
+        <section id="aisPanel" class="panel ais-panel" hidden>
+          <header class="panel-title">
+            <div>
+              <span id="aisStatus">AIS requis</span>
+              <strong>AISStream</strong>
+            </div>
+            <button type="button" data-minimize-target="aisPanel" aria-label="Reduire">x</button>
+          </header>
+          <label>
+            Cle API
+            <input id="aisApiKey" type="password" autocomplete="off" placeholder="AISStream API key" />
+          </label>
+          <label>
+            Zone
+            <select id="aisScope">
+              <option value="nc">Nouvelle-Caledonie</option>
+              <option value="pacific">Pacifique</option>
+              <option value="world">Monde</option>
+            </select>
+          </label>
+          <div class="ais-actions">
+            <button id="connectAis" type="button">Connecter</button>
+            <button id="disconnectAis" type="button">Couper</button>
+          </div>
+          <p id="aisMessage">Colle ta cle API AISStream pour lancer le flux live.</p>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.117.0/Build/Cesium/Cesium.js"></script>
+    <script src="./assets/js/app.js"></script>
+  </body>
+</html>
