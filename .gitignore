@@ -1,0 +1,12 @@
+node_modules/
+dist/
+tmp/
+reference-frames/
+
+.env
+.env.*
+*.log
+
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

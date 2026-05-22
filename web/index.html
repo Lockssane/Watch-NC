@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>COSS Watch NC</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="preconnect" href="https://tile.openstreetmap.org" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQxxfx2v9VuznLukZgXxYg9Vy5QSMpQ="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260522-restore-old-model-r1" />
+  </head>
+  <body>
+    <main class="ops-shell">
+      <section class="map-stage" aria-label="Carte operationnelle">
+        <div id="map"></div>
+        <div id="globeMap" aria-label="Globe 3D operationnel" hidden></div>
+        <div class="map-logo-corner" aria-hidden="true">
+          <img src="./assets/coss-nc-logo.png" alt="" />
+        </div>
+
+        <nav class="side-tools left-tools" aria-label="Outils principaux">
+          <button
+            id="toggleLayersPanel"
+            class="tool-button icon-layers"
+            title="Calques"
+            aria-label="Calques"
+            data-tooltip="Calques"
+          >
+            <span class="sr-only">Calques</span>
+          </button>
+          <button
+            id="toggleSurveillancePanel"
+            class="tool-button active icon-radar"
+            title="Surveillance"
+            aria-label="Surveillance"
+            data-tooltip="Surveillance"
+          >
+            <span class="sr-only">Surveillance</span>
+          </button>
+          <button
+            id="toggleSurfacePanel"
+            class="tool-button icon-surface"
+            title="Situation surface"
+            aria-label="Situation surface"
+            data-tooltip="Situation surface"
+          >
+            <span class="sr-only">Situation surface</span>
+          </button>
+          <button
+            id="toggleMapSearchPanel"
+            class="tool-button icon-search"
+            title="Recherche"
+            aria-label="Recherche"
+            data-tooltip="Recherche"
+          >
+            <span class="sr-only">Recherche</span>
+          </button>
+        </nav>
+
+        <nav class="side-tools right-tools" aria-label="Outils carte" hidden aria-hidden="true">
+          <button title="Couches">□</button>
+          <button title="Meteo">◎</button>
+          <button title="Alertes">◇</button>
+          <button title="Vent">≈</button>
+          <button title="Lecture">▷</button>
+          <button title="Mesure">△</button>
+        </nav>
+
+        <div id="mapSearchPanel" class="map-search" hidden>
+          <span aria-hidden="true">⌕</span>
+          <input id="mapSearchInput" type="search" placeholder="Recherche navire, MMSI, port, zone..." />
+          <button id="runMapSearch" type="button" aria-label="Lancer recherche">OK</button>
+        </div>
+
+        <div id="coordinateHud" class="coordinate-hud" aria-label="Coordonnees carte">
+          <div>
+            <span>Curseur</span>
+            <b id="cursorLat">LAT --</b>
+            <b id="cursorLon">LON --</b>
+          </div>
+          <div>
+            <span>Centre</span>
+            <b id="centerLat">LAT --</b>
+            <b id="centerLon">LON --</b>
+          </div>
+          <div>
+            <span>Zoom</span>
+            <b id="zoomLevel">Z --</b>
+            <select id="coordFormat" aria-label="Format coordonnees">
+              <option value="dm">Degres minutes</option>
+              <option value="dms">Degres minutes secondes</option>
+              <option value="dd">Decimal</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="globeHover" class="globe-hover" hidden></div>
+        <div id="trackHover" class="track-hover-card" hidden></div>
+        <div id="staticTrackCard" class="static-track-card" hidden></div>
+
+        <section id="aisPanel" class="ais-panel panel" hidden>
+          <div class="panel-title">
+            <span>AISStream live</span>
+            <div class="panel-title-actions">
+              <small>Cle locale</small>
+              <button type="button" class="minimize-button" data-minimize-target="aisPanel" aria-label="Reduire AISStream"></button>
+            </div>
+          </div>
+          <label>
+            Cle API AISStream
+            <input id="aisApiKey" type="password" autocomplete="off" placeholder="Coller la cle API..." />
+          </label>
+          <label>
+            Zone de reception
+            <select id="aisScope">
+              <option value="nc">Nouvelle-Caledonie</option>
+              <option value="pacific">Pacifique Sud</option>
+              <option value="world">Monde entier</option>
+            </select>
+          </label>
+          <div class="ais-actions">
+            <button id="connectAis" type="button">Connecter</button>
+            <button id="disconnectAis" type="button">Couper</button>
+          </div>
+          <p id="aisMessage">La cle reste dans ce navigateur et n'est pas ecrite dans le projet.</p>
+        </section>
+
+        <header class="topbar">
+          <div class="topbar-brand">
+            <div>
+              <p class="eyebrow">COSS Nouvelle-Caledonie</p>
+              <h1>COSS Watch NC</h1>
+            </div>
+          </div>
+          <div class="status-strip" aria-label="Etat systeme">
+            <span><b id="vesselCount">0</b> navires</span>
+            <span><b id="alertCount">0</b> alertes</span>
+            <span><b id="maritimeArea">--</b> km² espace maritime</span>
+            <span><b id="protectedCount">--</b> aires protegees</span>
+            <span id="aisStatus" class="live-dot">AIS requis</span>
+          </div>
+        </header>
+
+        <aside class="left-panel panel">
+          <div class="panel-title">
+            <span>Surveillance</span>
+            <div class="panel-title-actions">
+              <small>ZEE / Lagon / SAR</small>
+              <button type="button" class="minimize-button" data-minimize-target="surveillance" aria-label="Reduire Surveillance"></button>
+            </div>
+          </div>
+          <div class="search-row">
+            <input id="searchInput" type="search" placeholder="MMSI, nom, type..." />
+          </div>
+          <div class="fleet-tabs" role="tablist" aria-label="Filtres navires">
+            <button class="active" data-filter="all">Tous</button>
+            <button data-filter="priority">Veille</button>
+            <button data-filter="fishing">Peche</button>
+            <button data-filter="cargo">Cargo</button>
+          </div>
+          <div id="fleetList" class="fleet-list" aria-live="polite"></div>
+        </aside>
+
+        <aside class="right-panel panel" hidden>
+          <div class="panel-title">
+            <span id="detailTitle">Situation surface</span>
+            <div class="panel-title-actions">
+              <small id="detailSubtitle">Selectionne un navire</small>
+              <button type="button" class="minimize-button" data-minimize-target="surface" aria-label="Reduire Situation surface"></button>
+            </div>
+          </div>
+          <div id="detailCard" class="detail-card empty">
+            <p>La fiche navire affichera cap, vitesse, position, dernier signal, statut et historique court.</p>
+          </div>
+          <div class="section-heading">Alertes actives</div>
+          <div id="alertList" class="alert-list"></div>
+        </aside>
+
+        <footer class="command-bar panel">
+          <button
+            type="button"
+            class="minimize-button layers-minimize"
+            data-minimize-target="layers"
+            aria-label="Reduire Calques"
+          ></button>
+          <button id="toggleZones" class="command icon-zone active" aria-label="Zones" data-tooltip="Zones"></button>
+          <button id="toggleProtected" class="command icon-areas active" aria-label="Aires" data-tooltip="Aires protegees"></button>
+          <button id="toggleTracks" class="command icon-tracks active" aria-label="Traces" data-tooltip="Traces"></button>
+          <button id="toggleGlobe" class="command icon-globe" aria-label="Globe" data-tooltip="Globe"></button>
+          <button id="toggleAis" class="command icon-ais" aria-label="AIS Live" data-tooltip="AIS Live"></button>
+          <button id="focusNc" class="command icon-nc" aria-label="NC" data-tooltip="Centrer NC"></button>
+          <button id="createSar" class="command primary icon-sar" aria-label="Incident SAR" data-tooltip="Incident SAR"></button>
+        </footer>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      window.CESIUM_BASE_URL = "https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/";
+    </script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
+    <script src="./app.js?v=20260522-restore-old-model-r1"></script>
+  </body>
+</html>

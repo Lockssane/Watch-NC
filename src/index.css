@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-abyss: #020617;
+  --color-navy: #0f172a;
+  --color-radar: #22d3ee;
+  --color-phosphor: #4ade80;
+  --color-alert: #ef4444;
+  --color-ink: #94a3b8;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-abyss);
+  color: var(--color-ink);
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--color-navy);
+  color: var(--color-phosphor);
+  border: 1px solid var(--color-radar);
+  border-radius: 0.375rem;
+}
+
+.leaflet-popup-tip {
+  background: var(--color-navy);
+  border: 1px solid var(--color-radar);
+}
+
+.leaflet-popup-content {
+  margin: 0.5rem 0.75rem;
+  font-family: monospace;
+}
