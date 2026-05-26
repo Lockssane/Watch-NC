@@ -2687,8 +2687,8 @@ const homeScenes = [
     title: "COSS WATCH NC",
     body:
       "Une ouverture cinematographique pour lire le theatre maritime, suivre les routes longues distances et installer tout de suite une sensation de surveillance moderne, fluide et maitrisee.",
-    ctaLabel: "Entrer dans la carte",
-    secondaryLabel: "Voir le focus NC",
+    ctaLabel: "Ouvrir la carte",
+    secondaryLabel: "Decouvrir l'interface",
     secondaryTarget: 1,
     panelLabel: "Theatre",
     panelValue: "Pacifique Sud",
@@ -2720,8 +2720,8 @@ const homeScenes = [
     title: "FOCUS NC",
     body:
       "Resserrement geospatial sur la ZEE, le lagon, les approches de Noumea et les couloirs de surveillance pour montrer un pilotage plus tactique de la zone.",
-    ctaLabel: "Entrer dans la carte",
-    secondaryLabel: "Voir la posture SAR",
+    ctaLabel: "Ouvrir la carte",
+    secondaryLabel: "Decouvrir l'interface",
     secondaryTarget: 2,
     panelLabel: "Zone",
     panelValue: "Nouvelle-Caledonie",
@@ -2754,7 +2754,7 @@ const homeScenes = [
     body:
       "Posture de coordination pour croiser les alertes, accelerer la decision et basculer sans rupture vers la carte operationnelle, les navires et les panneaux de situation surface.",
     ctaLabel: "Ouvrir la carte",
-    secondaryLabel: "Revenir au theatre global",
+    secondaryLabel: "Decouvrir l'interface",
     secondaryTarget: 0,
     panelLabel: "Priorite",
     panelValue: "SAR / Alertes",
@@ -2802,6 +2802,10 @@ function initHomeExperience() {
   const homePanelCopy = document.getElementById("homePanelCopy");
   const homeStatusChips = document.getElementById("homeStatusChips");
   const homeSceneCounter = document.getElementById("homeSceneCounter");
+  const homeLoader = document.getElementById("homeLoader");
+  const homeLoaderBar = document.getElementById("homeLoaderBar");
+  const homeLoaderPercent = document.getElementById("homeLoaderPercent");
+  const homeLoaderText = document.getElementById("homeLoaderText");
   const homeMetricLabels = [
     document.getElementById("homeMetricLabel1"),
     document.getElementById("homeMetricLabel2"),
@@ -2814,6 +2818,9 @@ function initHomeExperience() {
   ];
   const sceneButtons = Array.from(homeScreen.querySelectorAll("[data-home-scene]"));
   const jumpButtons = Array.from(homeScreen.querySelectorAll("[data-home-jump]"));
+  const anchorButtons = Array.from(homeScreen.querySelectorAll("[data-home-anchor]"));
+  const openOpsButtons = Array.from(homeScreen.querySelectorAll("[data-open-ops]"));
+  const revealBlocks = Array.from(homeScreen.querySelectorAll("[data-home-reveal]"));
   const primaryButton = document.getElementById("enterOps");
   const secondaryButton = document.getElementById("previewMap");
   const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -2821,6 +2828,7 @@ function initHomeExperience() {
   let activeSceneIndex = 0;
   let scrollFrame = null;
   let homeScrollAnimation = null;
+  let loaderFrame = null;
 
   function bindPress(target, handler) {
     if (!target) return;
@@ -2873,6 +2881,69 @@ function initHomeExperience() {
     }
 
     homeScrollAnimation = window.requestAnimationFrame(step);
+  }
+
+  function scrollToHomeTarget(selector) {
+    const target = selector ? homeScreen.querySelector(selector) : null;
+    if (!target) return;
+    setHomeScrollTop(target.offsetTop, !reducedMotionQuery.matches);
+  }
+
+  function playHomeLoader() {
+    if (!homeLoader) return;
+    window.cancelAnimationFrame(loaderFrame);
+    homeLoader.classList.remove("ready");
+    homeLoader.style.setProperty("--loader-progress", "0%");
+    if (homeLoaderBar) homeLoaderBar.style.width = "0%";
+    if (homeLoaderPercent) homeLoaderPercent.textContent = "0%";
+    if (homeLoaderText) homeLoaderText.textContent = "Loading maritime intelligence";
+
+    if (reducedMotionQuery.matches) {
+      homeLoader.classList.add("ready");
+      if (homeLoaderBar) homeLoaderBar.style.width = "100%";
+      if (homeLoaderPercent) homeLoaderPercent.textContent = "100%";
+      return;
+    }
+
+    const startTime = performance.now();
+    const duration = 1200;
+    function step(now) {
+      const progress = clamp((now - startTime) / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - progress, 2.8);
+      const percent = Math.round(eased * 100);
+      homeLoader.style.setProperty("--loader-progress", `${percent}%`);
+      if (homeLoaderBar) homeLoaderBar.style.width = `${percent}%`;
+      if (homeLoaderPercent) homeLoaderPercent.textContent = `${percent}%`;
+      if (homeLoaderText && percent > 72) homeLoaderText.textContent = "Ready to monitor";
+      if (progress < 1) {
+        loaderFrame = window.requestAnimationFrame(step);
+        return;
+      }
+      window.setTimeout(() => homeLoader.classList.add("ready"), 180);
+    }
+    loaderFrame = window.requestAnimationFrame(step);
+  }
+
+  function initHomeReveals() {
+    if (!revealBlocks.length) return;
+    if (!("IntersectionObserver" in window) || reducedMotionQuery.matches) {
+      revealBlocks.forEach((block) => block.classList.add("visible"));
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        root: homeScroll,
+        threshold: 0.16,
+      },
+    );
+    revealBlocks.forEach((block) => observer.observe(block));
   }
 
   function sceneFromProgress(progress) {
@@ -2980,6 +3051,7 @@ function initHomeExperience() {
     homeScreen.style.setProperty("--home-pointer-y", "0px");
     window.history.replaceState(null, "", "#home");
     applyHomeProgress(0);
+    playHomeLoader();
   };
 
   const openOps = () => {
@@ -3004,6 +3076,11 @@ function initHomeExperience() {
   }
 
   function previewScene() {
+    const targetSelector = secondaryButton?.dataset.homeAnchor;
+    if (targetSelector) {
+      scrollToHomeTarget(targetSelector);
+      return;
+    }
     goToScene(homeScenes[activeSceneIndex].secondaryTarget, true);
   }
 
@@ -3040,6 +3117,14 @@ function initHomeExperience() {
     });
   });
 
+  anchorButtons.forEach((button) => {
+    bindPress(button, () => scrollToHomeTarget(button.dataset.homeAnchor));
+  });
+
+  openOpsButtons.forEach((button) => {
+    bindPress(button, openOps);
+  });
+
   sceneButtons.forEach((button, index) => {
     bindPress(button, () => {
       goToScene(index, false);
@@ -3050,6 +3135,8 @@ function initHomeExperience() {
     event.stopPropagation();
     showHome();
   });
+
+  initHomeReveals();
 
   if (window.location.hash === "#ops") {
     homeScreen.hidden = true;

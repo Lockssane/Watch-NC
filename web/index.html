@@ -16,12 +16,23 @@
       rel="stylesheet"
       href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260522-restore-old-model-r1" />
+    <link rel="stylesheet" href="./styles.css?v=20260527-hubtown-homepage-r1" />
   </head>
   <body>
     <section id="homeScreen" class="home-screen" aria-hidden="true" hidden data-scene="global-theatre">
       <canvas id="aisCanvas" aria-hidden="true"></canvas>
       <div class="home-atmosphere" aria-hidden="true"></div>
+      <div id="homeLoader" class="home-loader" aria-live="polite">
+        <div class="home-loader-mark">
+          <img src="./assets/coss-nc-logo.png" alt="" />
+        </div>
+        <p>Maritime Surveillance System</p>
+        <strong id="homeLoaderText">Loading maritime intelligence</strong>
+        <div class="home-loader-track">
+          <span id="homeLoaderBar"></span>
+        </div>
+        <b id="homeLoaderPercent">0%</b>
+      </div>
 
       <nav class="home-nav" aria-label="Accueil COSS Watch NC">
         <a id="homeMapLink" class="home-brand" href="#ops">
@@ -32,9 +43,9 @@
           </span>
         </a>
         <div class="home-links">
-          <button type="button" data-home-jump="0">Theatre global</button>
-          <button type="button" data-home-jump="1">Focus NC</button>
-          <button type="button" data-home-jump="2">Posture SAR</button>
+          <button type="button" data-home-anchor="#homeVision">Vision</button>
+          <button type="button" data-home-anchor="#homeFeatures">Fonctions</button>
+          <button type="button" data-home-anchor="#homePacific">Zones</button>
           <button id="enterOpsNav" type="button">Ready to monitor</button>
         </div>
       </nav>
@@ -44,14 +55,21 @@
           <div class="home-stage-grid">
             <div class="home-copy">
               <div id="homeKicker" class="home-kicker">Theatre 01 | Maritime command layer</div>
-              <h2 id="homeTitle">SOUTH PACIFIC WATCH</h2>
+              <h2 id="homeTitle">COSS WATCH NC</h2>
               <p id="homeSubtitle" class="home-subtitle">
-                Chargement du theatre maritime, des flux AIS, des zones SAR/SRR et de la
-                surveillance regionale pour une entree rapide dans le poste operationnel.
+                Surveillance maritime, suivi des navires et coordination operationnelle en
+                Nouvelle-Caledonie.
+              </p>
+              <p class="home-hero-brief">
+                Une interface moderne concue pour visualiser les flux AIS, les zones SAR/SRR,
+                les alertes et les operations maritimes dans un environnement clair, immersif
+                et professionnel.
               </p>
               <div class="home-actions">
-                <button id="enterOps" type="button" class="home-primary">Entrer dans la carte</button>
-                <button id="previewMap" type="button" class="home-secondary">Voir la posture SAR</button>
+                <button id="enterOps" type="button" class="home-primary">Ouvrir la carte</button>
+                <button id="previewMap" type="button" class="home-secondary" data-home-anchor="#homeInterface">
+                  Decouvrir l'interface
+                </button>
               </div>
               <div class="home-scroll-cue">
                 <b>Ready to monitor</b>
@@ -134,6 +152,160 @@
           <section class="home-story-step"><span>Focus Nouvelle-Caledonie</span></section>
           <section class="home-story-step"><span>Posture SAR</span></section>
         </div>
+
+        <section id="homeVision" class="home-section home-vision-section" data-home-reveal>
+          <div class="home-section-kicker">Vision operationnelle</div>
+          <div class="home-section-grid">
+            <h2>Voir plus loin sur l'ocean.</h2>
+            <p>
+              COSS WATCH NC transforme les donnees maritimes en une vision claire :
+              navires, zones, alertes, trajectoires et evenements operationnels reunis
+              dans une seule interface.
+            </p>
+          </div>
+          <div class="home-keywords" aria-label="Mots cles">
+            <span>Surveiller</span>
+            <span>Anticiper</span>
+            <span>Coordonner</span>
+            <span>Securiser</span>
+          </div>
+        </section>
+
+        <section id="homeFeatures" class="home-section" data-home-reveal>
+          <div class="home-section-kicker">Capacites maritimes</div>
+          <div class="home-section-head">
+            <h2>Un cockpit concu pour la veille de surface.</h2>
+            <p>
+              Des couches lisibles, des pistes AIS, des zones de responsabilite et une
+              lecture rapide des situations qui demandent une attention operationnelle.
+            </p>
+          </div>
+          <div class="home-feature-grid">
+            <article class="home-feature-card">
+              <span>AIS</span>
+              <h3>Suivi navires</h3>
+              <p>Positions, caps, vitesses, destinations et fraicheur du signal.</p>
+            </article>
+            <article class="home-feature-card">
+              <span>SAR</span>
+              <h3>Zones SAR/SRR</h3>
+              <p>Limites de responsabilite, zones de recherche et posture d'alerte.</p>
+            </article>
+            <article class="home-feature-card">
+              <span>ZEE</span>
+              <h3>Espace maritime</h3>
+              <p>ZEE Nouvelle-Caledonie, aires protegees, lagon et approches portuaires.</p>
+            </article>
+            <article class="home-feature-card">
+              <span>OPS</span>
+              <h3>Alertes</h3>
+              <p>Perte AIS, proximite de limites, immobilite et evenements critiques.</p>
+            </article>
+            <article class="home-feature-card">
+              <span>8H</span>
+              <h3>Trajectoires</h3>
+              <p>Historique des pistes, variation de vitesse et analyse de comportement.</p>
+            </article>
+            <article class="home-feature-card">
+              <span>HUD</span>
+              <h3>Centre operationnel</h3>
+              <p>Interface sombre, panneaux de situation, boussole et etat systeme.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="homeInterface" class="home-section home-interface-section" data-home-reveal>
+          <div class="home-section-kicker">Interface operationnelle</div>
+          <div class="home-interface-grid">
+            <div class="home-section-head">
+              <h2>Carte centrale, decision rapide.</h2>
+              <p>
+                La carte reste le coeur de l'experience : couches activables, liste des
+                navires, fiche piste, alertes, mode SAR et analyse des trajectoires.
+              </p>
+              <button type="button" class="home-secondary" data-open-ops>Acceder au poste</button>
+            </div>
+            <div class="home-cockpit" aria-label="Apercu interface COSS Watch NC">
+              <div class="home-cockpit-top">
+                <span>COSS WATCH NC</span>
+                <b>AIS LIVE | PACIFIQUE</b>
+              </div>
+              <div class="home-cockpit-map">
+                <span class="cockpit-route route-a"></span>
+                <span class="cockpit-route route-b"></span>
+                <span class="cockpit-ship ship-a"></span>
+                <span class="cockpit-ship ship-b"></span>
+                <span class="cockpit-ship ship-c"></span>
+                <span class="cockpit-zone"></span>
+              </div>
+              <div class="home-cockpit-bottom">
+                <span>12 navires</span>
+                <span>3 alertes</span>
+                <span>Mode SAR pret</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="homePacific" class="home-section home-pacific-section" data-home-reveal>
+          <div class="home-section-kicker">Nouvelle-Caledonie | Pacifique Sud</div>
+          <div class="home-section-grid">
+            <h2>Pensee pour les approches, le lagon et les grands espaces.</h2>
+            <p>
+              L'application aide a suivre les zones sensibles, les approches portuaires,
+              les espaces de responsabilite et les situations necessitant une attention
+              operationnelle autour de la Nouvelle-Caledonie.
+            </p>
+          </div>
+          <div class="home-pacific-map" aria-hidden="true">
+            <span class="pacific-island main-island"></span>
+            <span class="pacific-island loyalty-island"></span>
+            <span class="pacific-island isle-pines"></span>
+            <span class="pacific-ring ring-a"></span>
+            <span class="pacific-ring ring-b"></span>
+            <span class="pacific-route route-one"></span>
+            <span class="pacific-route route-two"></span>
+            <span class="pacific-light light-a"></span>
+            <span class="pacific-light light-b"></span>
+            <span class="pacific-light light-c"></span>
+          </div>
+        </section>
+
+        <section id="homeTechnology" class="home-section" data-home-reveal>
+          <div class="home-section-kicker">Architecture evolutive</div>
+          <div class="home-tech-grid">
+            <div>
+              <h2>Une base technique pensee pour grandir.</h2>
+              <p>
+                Donnees simulees, flux AIS gratuits, relais backend securise, sources locales
+                futures et couches cartographiques avancees : COSS WATCH NC avance par
+                paliers propres, sans exposer de cle sensible.
+              </p>
+            </div>
+            <ul class="home-tech-list">
+              <li>Frontend immersif et lisible</li>
+              <li>Backend AIS securise</li>
+              <li>Geofencing SAR/SRR</li>
+              <li>Journal d'evenements futur</li>
+              <li>Sources AIS gratuites ou locales</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="home-section home-final-cta" data-home-reveal>
+          <div class="home-final-panel">
+            <span>Ready to monitor</span>
+            <h2>Pret a surveiller l'espace maritime ?</h2>
+            <p>
+              Passe de la presentation a la carte operationnelle et garde la main sur les
+              navires, les zones et les alertes.
+            </p>
+            <div class="home-actions">
+              <button type="button" class="home-primary" data-open-ops>Acceder a la carte</button>
+              <button type="button" class="home-secondary" data-home-anchor="#homeInterface">Voir le cockpit</button>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -365,6 +537,6 @@
       window.CESIUM_BASE_URL = "https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/";
     </script>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
-    <script src="./app.js?v=20260522-restore-old-model-r1"></script>
+    <script src="./app.js?v=20260527-hubtown-homepage-r1"></script>
   </body>
 </html>

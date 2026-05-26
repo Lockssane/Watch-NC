@@ -55,6 +55,7 @@ Watch-NC/
 
 ## Fonctionnalites actuelles
 
+- Premiere page immersive COSS WATCH NC inspiree des codes premium Hubtown, adaptee au maritime.
 - Carte satellite Leaflet.
 - Couches maritimes officielles depuis ArcGIS et data.gouv.nc.
 - Vue globe Cesium si la bibliotheque charge correctement.
@@ -75,3 +76,14 @@ Voir [docs/ais-sources.md](docs/ais-sources.md).
 
 Les cles API restent cote backend dans `.env`. Le frontend ne doit pas stocker ni envoyer de cle AIS.
 Sans source AIS reelle configuree, aucune piste AIS ne sera inventee.
+
+## Premiere page
+
+La page `web/index.html` s'ouvre sur une experience d'accueil sombre et maritime :
+
+- intro courte avec progression de chargement ;
+- hero COSS WATCH NC / Noumea Traffic ;
+- sections Vision, Capacites, Interface operationnelle, Pacifique Sud, Technologie et appel a l'action ;
+- boutons d'acces vers la carte operationnelle existante.
+
+Cette page n'appelle aucune API sensible. Elle presente le produit, puis laisse l'interface cartographique prendre le relais via `#ops`.

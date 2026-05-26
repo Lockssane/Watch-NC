@@ -33,13 +33,26 @@ Watch-NC/
 
 ## Roles
 
-- `web/index.html` fournit la structure DOM attendue par le script.
-- `web/styles.css` regroupe l'habillage de la carte, des panneaux, des pistes et des popups.
-- `web/app.js` contient encore la logique historique du projet : Leaflet, Cesium, couches officielles, rendu de liste et interactions.
+- `web/index.html` fournit la structure DOM attendue par le script, avec une premiere page immersive et l'interface carte operationnelle.
+- `web/styles.css` regroupe l'habillage de la homepage, de la carte, des panneaux, des pistes et des popups.
+- `web/app.js` contient encore la logique historique du projet : accueil, Leaflet, Cesium, couches officielles, rendu de liste et interactions.
 - `server/ais-relay.mjs` expose les endpoints locaux `/health`, `/events`, `/connect` et `/disconnect`.
 - `server/ais/ais-service.mjs` selectionne une source AIS gratuite ou locale.
 - `server/ais/providers/` contient les adaptateurs AISStream, AISHub et AIS-catcher.
 - `server/ais/normalize-vessel.mjs` prepare le format interne unique des navires.
+
+## Premiere page
+
+La homepage vit dans `web/` pour rester proche de l'interface actuelle et eviter une rupture entre la presentation et le poste operationnel.
+
+Elle est composee de :
+
+- une intro de chargement non sensible ;
+- un hero maritime COSS WATCH NC ;
+- des sections editoriales pour la vision, les capacites, l'interface operationnelle, la zone Pacifique Sud et la technologie ;
+- des CTA qui basculent vers la carte avec le hash `#ops`.
+
+Elle ne lit pas `.env`, ne manipule aucune cle AIS et ne declenche pas d'appel API externe.
 
 ## Flux AIS
 
