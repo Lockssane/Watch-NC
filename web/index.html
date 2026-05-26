@@ -19,6 +19,124 @@
     <link rel="stylesheet" href="./styles.css?v=20260522-restore-old-model-r1" />
   </head>
   <body>
+    <section id="homeScreen" class="home-screen" aria-hidden="true" hidden data-scene="global-theatre">
+      <canvas id="aisCanvas" aria-hidden="true"></canvas>
+      <div class="home-atmosphere" aria-hidden="true"></div>
+
+      <nav class="home-nav" aria-label="Accueil COSS Watch NC">
+        <a id="homeMapLink" class="home-brand" href="#ops">
+          <img src="./assets/coss-nc-logo.png" alt="" />
+          <span class="home-brand-copy">
+            <strong>COSS WATCH NC</strong>
+            <small>Noumea Traffic | Maritime Ops</small>
+          </span>
+        </a>
+        <div class="home-links">
+          <button type="button" data-home-jump="0">Theatre global</button>
+          <button type="button" data-home-jump="1">Focus NC</button>
+          <button type="button" data-home-jump="2">Posture SAR</button>
+          <button id="enterOpsNav" type="button">Ready to monitor</button>
+        </div>
+      </nav>
+
+      <div id="homeScroll" class="home-scroll" aria-label="Sequence d introduction">
+        <section class="home-stage">
+          <div class="home-stage-grid">
+            <div class="home-copy">
+              <div id="homeKicker" class="home-kicker">Theatre 01 | Maritime command layer</div>
+              <h2 id="homeTitle">SOUTH PACIFIC WATCH</h2>
+              <p id="homeSubtitle" class="home-subtitle">
+                Chargement du theatre maritime, des flux AIS, des zones SAR/SRR et de la
+                surveillance regionale pour une entree rapide dans le poste operationnel.
+              </p>
+              <div class="home-actions">
+                <button id="enterOps" type="button" class="home-primary">Entrer dans la carte</button>
+                <button id="previewMap" type="button" class="home-secondary">Voir la posture SAR</button>
+              </div>
+              <div class="home-scroll-cue">
+                <b>Ready to monitor</b>
+                <span>Fais defiler pour explorer la posture maritime</span>
+              </div>
+            </div>
+
+            <div class="home-centerpiece" aria-hidden="true">
+              <div class="home-logo-core">
+                <div class="home-logo-shell"></div>
+                <div class="home-logo-ring home-logo-ring-a"></div>
+                <div class="home-logo-ring home-logo-ring-b"></div>
+                <div class="home-logo-ring home-logo-ring-c"></div>
+                <div class="home-logo-grid"></div>
+                <div class="home-logo-mark">NC</div>
+                <div class="home-logo-caption">
+                  <span>COSS Nouvelle-Caledonie</span>
+                  <b>Surveillance | Sauvetage | Trafic</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-side-stack">
+              <div class="home-panel home-panel-lead">
+                <span id="homePanelLabel">Zone</span>
+                <b id="homePanelValue">Pacifique Sud</b>
+                <p id="homePanelCopy">
+                  Theatre maritime grand angle avec veille AIS, zones de responsabilite et
+                  lecture operationnelle des mouvements de surface.
+                </p>
+              </div>
+
+              <div id="homeStatusChips" class="home-status-row" aria-label="Indicateurs accueil">
+                <span class="home-chip">AIS</span>
+                <span class="home-chip">SAR</span>
+                <span class="home-chip">ZEE</span>
+              </div>
+
+              <div class="home-scene-nav" role="tablist" aria-label="Scenes d introduction">
+                <button type="button" class="home-scene-tab active" data-home-scene aria-selected="true">
+                  <span>01</span>
+                  <strong>Theatre global</strong>
+                </button>
+                <button type="button" class="home-scene-tab" data-home-scene aria-selected="false">
+                  <span>02</span>
+                  <strong>Focus Nouvelle-Caledonie</strong>
+                </button>
+                <button type="button" class="home-scene-tab" data-home-scene aria-selected="false">
+                  <span>03</span>
+                  <strong>Posture SAR</strong>
+                </button>
+              </div>
+
+              <div class="home-panel">
+                <span>Sequence</span>
+                <b id="homeSceneCounter">01 / 03</b>
+                <p>Experience immersive inspiree Hubtown, recadree pour la surveillance maritime.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="home-metrics" aria-label="Indicateurs d entree">
+            <div class="home-metric">
+              <span id="homeMetricLabel1">Flux</span>
+              <b id="homeMetricValue1">AIS ready</b>
+            </div>
+            <div class="home-metric">
+              <span id="homeMetricLabel2">Zone</span>
+              <b id="homeMetricValue2">Pacifique Sud</b>
+            </div>
+            <div class="home-metric">
+              <span id="homeMetricLabel3">Mode</span>
+              <b id="homeMetricValue3">Operational</b>
+            </div>
+          </div>
+        </section>
+
+        <div class="home-story-rail" aria-hidden="true">
+          <section class="home-story-step"><span>Theatre global</span></section>
+          <section class="home-story-step"><span>Focus Nouvelle-Caledonie</span></section>
+          <section class="home-story-step"><span>Posture SAR</span></section>
+        </div>
+      </div>
+    </section>
+
     <main class="ops-shell">
       <section class="map-stage" aria-label="Carte operationnelle">
         <div id="map"></div>
@@ -146,6 +264,13 @@
               <h1>COSS Watch NC</h1>
             </div>
           </div>
+          <div class="topbar-actions" aria-label="Navigation rapide">
+            <button id="showHome" type="button" class="topbar-button">Theatre</button>
+            <button id="prevTrack" type="button" class="topbar-button">Prev</button>
+            <button id="nextTrack" type="button" class="topbar-button">Next</button>
+            <span id="modeBadge" class="topbar-badge">Operationnel</span>
+            <span id="utcClock" class="topbar-badge">UTC --:--:--</span>
+          </div>
           <div class="status-strip" aria-label="Etat systeme">
             <span><b id="vesselCount">0</b> navires</span>
             <span><b id="alertCount">0</b> alertes</span>
@@ -154,6 +279,29 @@
             <span id="aisStatus" class="live-dot">AIS requis</span>
           </div>
         </header>
+
+        <div id="missionHud" class="mission-hud" aria-label="Barre basse operationnelle">
+          <div class="mission-cell">
+            <span>Visibles</span>
+            <b id="visibleCountHud">0</b>
+          </div>
+          <div class="mission-cell">
+            <span>Source AIS</span>
+            <b id="activeSourceHud">En attente</b>
+          </div>
+          <div class="mission-cell">
+            <span>Mode</span>
+            <b id="opsModeHud">Operationnel</b>
+          </div>
+          <div class="mission-cell">
+            <span>Backend</span>
+            <b id="backendHud">Offline</b>
+          </div>
+          <div class="mission-cell">
+            <span>Etat data</span>
+            <b id="dataStateHud">Requis</b>
+          </div>
+        </div>
 
         <aside class="left-panel panel">
           <div class="panel-title">

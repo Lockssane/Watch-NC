@@ -285,9 +285,86 @@ function updateCoordinateHud(latlng = null) {
   if (zoomLevel) zoomLevel.textContent = `Z ${map.getZoom().toFixed(2)}`;
 }
 
+function filteredVesselCount() {
+  return filteredVessels().length;
+}
+
+function setOpsMode(mode) {
+  currentOpsMode = mode || "Operationnel";
+  updateMissionHud();
+}
+
+function updateMissionHud() {
+  const visibleCountHud = document.getElementById("visibleCountHud");
+  const activeSourceHud = document.getElementById("activeSourceHud");
+  const opsModeHud = document.getElementById("opsModeHud");
+  const backendHud = document.getElementById("backendHud");
+  const dataStateHud = document.getElementById("dataStateHud");
+  const modeBadge = document.getElementById("modeBadge");
+
+  if (visibleCountHud) visibleCountHud.textContent = String(filteredVesselCount());
+  if (activeSourceHud) activeSourceHud.textContent = activeAisSourceLabel;
+  if (opsModeHud) opsModeHud.textContent = currentOpsMode;
+  if (backendHud) backendHud.textContent = backendStateLabel;
+  if (dataStateHud) dataStateHud.textContent = currentDataState;
+  if (modeBadge) modeBadge.textContent = currentOpsMode;
+}
+
+function updateUtcClock() {
+  const utcClock = document.getElementById("utcClock");
+  if (!utcClock) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "UTC",
+    hour12: false,
+  });
+  utcClock.textContent = `UTC ${time}`;
+}
+
+function selectedTrackIndex(vesselsList = filteredVessels()) {
+  return vesselsList.findIndex((vessel) => vessel.id === selectedTrackId);
+}
+
+function updateTrackNavigationButtons() {
+  const previousButton = document.getElementById("prevTrack");
+  const nextButton = document.getElementById("nextTrack");
+  if (!previousButton || !nextButton) return;
+  const visible = filteredVessels();
+  const activeIndex = selectedTrackIndex(visible);
+  const disabled = visible.length < 2;
+  previousButton.disabled = disabled;
+  nextButton.disabled = disabled;
+  previousButton.setAttribute("aria-disabled", previousButton.disabled ? "true" : "false");
+  nextButton.setAttribute("aria-disabled", nextButton.disabled ? "true" : "false");
+  previousButton.title =
+    activeIndex > 0 && visible[activeIndex - 1]
+      ? `Navire precedent : ${visible[activeIndex - 1].name}`
+      : "Navire precedent";
+  nextButton.title =
+    activeIndex >= 0 && activeIndex < visible.length - 1 && visible[activeIndex + 1]
+      ? `Navire suivant : ${visible[activeIndex + 1].name}`
+      : "Navire suivant";
+}
+
+function selectAdjacentTrack(direction) {
+  const visible = filteredVessels();
+  if (visible.length < 2) return;
+  const activeIndex = selectedTrackIndex(visible);
+  const fallbackIndex = direction > 0 ? 0 : visible.length - 1;
+  const baseIndex = activeIndex === -1 ? fallbackIndex : activeIndex;
+  const targetIndex = (baseIndex + direction + visible.length) % visible.length;
+  const target = visible[targetIndex];
+  if (target) selectTrack(target.id);
+}
+
 map.on("mousemove", (event) => updateCoordinateHud(event.latlng));
 map.on("move zoom zoomend", () => updateCoordinateHud());
 updateCoordinateHud();
+updateUtcClock();
+window.setInterval(updateUtcClock, 1000);
 
 const zoneLayer = L.layerGroup().addTo(map);
 const landLayer = L.layerGroup().addTo(map);
@@ -327,6 +404,10 @@ const liveShipProfiles = new Map();
 const liveVessels = [];
 let selectedTrackId = null;
 let activeFilter = "all";
+let currentOpsMode = "Operationnel";
+let activeAisSourceLabel = "En attente";
+let backendStateLabel = "Offline";
+let currentDataState = "Requis";
 const maxLiveVessels = 650;
 
 const trafficTypes = ["cargo", "fishing", "tanker", "passenger", "watch"];
@@ -1231,6 +1312,7 @@ async function setGlobeMode(active) {
   }
 
   globeMode = active;
+  setOpsMode(active ? "Analyse" : "Operationnel");
   button.classList.toggle("active", active);
   stage.classList.toggle("globe-active", active);
   globeMap.hidden = !active;
@@ -1572,8 +1654,7 @@ function runMapSearch() {
 
   const track = bestTrackSearchMatch(query);
   if (track) {
-    focusMapLocation(track.lat, track.lon, 9.2);
-    selectTrack(track.id);
+    selectTrack(track.id, { center: true, zoom: 9.2 });
     return;
   }
 
@@ -1862,6 +1943,8 @@ function renderFleetList() {
   });
 
   document.getElementById("vesselCount").textContent = liveVessels.length.toLocaleString("fr-FR");
+  updateTrackNavigationButtons();
+  updateMissionHud();
 }
 
 function renderAlerts() {
@@ -1886,6 +1969,7 @@ function renderAlerts() {
     list.appendChild(card);
   });
   document.getElementById("alertCount").textContent = alerts.length;
+  updateMissionHud();
 }
 
 function renderDetail(vessel) {
@@ -1930,10 +2014,15 @@ function renderDetail(vessel) {
   `;
 }
 
-function selectTrack(id) {
+function selectTrack(id, options = {}) {
+  const { center = true, zoom = 9.2 } = options;
   window.clearTimeout(document.getElementById("staticTrackCard")?.closeTimer);
   selectedTrackId = id;
   const track = getTrackById(id);
+  if (track && center && !globeMode) {
+    focusMapLocation(track.lat, track.lon, zoom);
+  }
+  setOpsMode("Operationnel");
   renderFleetList();
   renderDetail(track);
   renderMarkers();
@@ -1981,6 +2070,20 @@ function setAisStatus(text, connected = false) {
   if (!status) return;
   status.textContent = text;
   status.classList.toggle("connected", connected);
+  activeAisSourceLabel = connected
+    ? text.replace(/^AIS live\s*\|\s*/i, "").trim() || "AIS"
+    : connected
+      ? "AIS"
+      : "Hors ligne";
+  backendStateLabel = connected ? "Online" : "Offline";
+  if (/erreur/i.test(text)) {
+    currentDataState = "Erreur";
+  } else if (/pause|coupe|requis/i.test(text)) {
+    currentDataState = "Degrade";
+  } else if (connected) {
+    currentDataState = "Reel";
+  }
+  updateMissionHud();
 }
 
 function normalizeAisSpeed(value) {
@@ -2927,6 +3030,7 @@ function initHomeExperience() {
 
   bindPress(primaryButton, openOps);
   bindPress(secondaryButton, previewScene);
+  bindPress(document.getElementById("enterOpsNav"), openOps);
   bindPress(document.getElementById("homeMapLink"), openOps);
 
   jumpButtons.forEach((button) => {
@@ -3076,12 +3180,16 @@ function bindControls() {
 
   document.getElementById("connectAis").addEventListener("click", connectAisStream);
   document.getElementById("disconnectAis").addEventListener("click", disconnectAisStream);
+  document.getElementById("prevTrack")?.addEventListener("click", () => selectAdjacentTrack(-1));
+  document.getElementById("nextTrack")?.addEventListener("click", () => selectAdjacentTrack(1));
 
   document.getElementById("focusNc").addEventListener("click", () => {
-    map.setView([ncOperationalFocus.lat, ncOperationalFocus.lon], ncOperationalFocus.zoom, { animate: true });
+    setOpsMode("Operationnel");
+    focusMapLocation(ncOperationalFocus.lat, ncOperationalFocus.lon, ncOperationalFocus.zoom);
   });
 
   document.getElementById("createSar").addEventListener("click", () => {
+    setOpsMode("SAR");
     if (!selectedTrackId) {
       renderAlerts();
       return;
@@ -3095,6 +3203,9 @@ function bindControls() {
     });
     renderAlerts();
   });
+
+  updateTrackNavigationButtons();
+  updateMissionHud();
 }
 
 renderLandReferences();
