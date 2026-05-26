@@ -116,8 +116,13 @@
             </div>
           </div>
           <label>
-            Cle API AISStream
-            <input id="aisApiKey" type="password" autocomplete="off" placeholder="Coller la cle API..." />
+            Source AIS
+            <select id="aisSource">
+              <option value="auto">Auto securise</option>
+              <option value="aisstream">AISStream.io</option>
+              <option value="aishub">AISHub futur</option>
+              <option value="aiscatcher">AIS-catcher futur</option>
+            </select>
           </label>
           <label>
             Zone de reception
@@ -131,7 +136,7 @@
             <button id="connectAis" type="button">Connecter</button>
             <button id="disconnectAis" type="button">Couper</button>
           </div>
-          <p id="aisMessage">La cle reste dans ce navigateur et n'est pas ecrite dans le projet.</p>
+          <p id="aisMessage">La cle AIS reste cote backend dans .env. Aucune cle n'est envoyee par l'interface.</p>
         </section>
 
         <header class="topbar">

@@ -1,20 +1,38 @@
-# Watch-NC
+# COSS WATCH NC / Noumea Traffic
 
-Interface web de surveillance maritime centree sur la Nouvelle-Caledonie.
+Interface web de surveillance maritime centree sur la Nouvelle-Caledonie et le Pacifique Sud.
 
 ## Lancer en local
 
-Depuis la racine du projet :
+Installer les dependances :
+
+```powershell
+npm install
+```
+
+Copier la configuration locale :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Demarrer le relais AIS local :
+
+```powershell
+npm run relay:ais
+```
+
+Dans un second terminal, lancer l'interface actuelle :
 
 ```powershell
 cd web
-python -m http.server 8788 --bind 127.0.0.1
+python -m http.server 8787 --bind 127.0.0.1
 ```
 
 Puis ouvrir :
 
 ```text
-http://127.0.0.1:8788
+http://127.0.0.1:8787
 ```
 
 ## Structure
@@ -23,11 +41,16 @@ http://127.0.0.1:8788
 Watch-NC/
   docs/
     architecture.md
+    ais-sources.md
+  server/
+    ais-relay.mjs
+    ais/
+      ais-service.mjs
+      providers/
   web/
     index.html
-    assets/
-      css/styles.css
-      js/app.js
+    styles.css
+    app.js
 ```
 
 ## Fonctionnalites actuelles
@@ -35,9 +58,20 @@ Watch-NC/
 - Carte satellite Leaflet.
 - Couches maritimes officielles depuis ArcGIS et data.gouv.nc.
 - Vue globe Cesium si la bibliotheque charge correctement.
-- Connexion AISStream via cle API utilisateur.
+- Backend AIS local avec selection de source.
+- AISStream.io via `.env` si une cle gratuite est disponible.
 - Liste de pistes, fiche detail, popups, filtres, recherche et alertes SAR.
 
-## Notes
+## Sources AIS prevues
 
-La cle AISStream est stockee dans `localStorage` par le navigateur. Pour une version de production, il faudra deplacer cette gestion cote serveur ou utiliser un mecanisme plus controle.
+- AISStream.io.
+- AISHub si les conditions d'acces gratuites sont respectees.
+- AIS-catcher / RTL-SDR pour une future station locale autour de Noumea.
+Le mode demo AIS a ete retire pour privilegier uniquement les pistes reelles.
+
+Voir [docs/ais-sources.md](docs/ais-sources.md).
+
+## Securite
+
+Les cles API restent cote backend dans `.env`. Le frontend ne doit pas stocker ni envoyer de cle AIS.
+Sans source AIS reelle configuree, aucune piste AIS ne sera inventee.

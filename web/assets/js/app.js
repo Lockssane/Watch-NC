@@ -298,6 +298,8 @@ let globePickHandler = null;
 let globeReferencesLoaded = false;
 let globeLanesLoaded = false;
 let aisSocket = null;
+let aisRelaySource = null;
+const aisRelayBaseUrl = "http://127.0.0.1:8790";
 let aisConnected = false;
 const liveVesselByMmsi = new Map();
 const liveShipProfiles = new Map();
@@ -2109,7 +2111,52 @@ function upsertAisPosition(aisMessage) {
   }
 }
 
-function disconnectAisStream() {
+function stopRelayEventSource() {
+  if (!aisRelaySource) return;
+  try {
+    aisRelaySource.close();
+  } catch {
+    // no-op
+  }
+  aisRelaySource = null;
+}
+
+async function relayRequest(path, body) {
+  const response = await fetch(`${aisRelayBaseUrl}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`${response.status} ${details}`.trim());
+  }
+  return response.json().catch(() => ({}));
+}
+
+function handleAisPayload(payload, source = "aisstream") {
+  try {
+    const aisMessage = typeof payload === "string" ? JSON.parse(payload) : payload;
+    aisMessage.MetaData = {
+      ...(aisMessage.MetaData || aisMessage.Metadata || {}),
+      Source: source || "aisstream",
+    };
+    if (aisMessage.Message?.PositionReport || aisMessage.Message?.StandardClassBPositionReport) {
+      upsertAisPosition(aisMessage);
+    } else if (
+      aisMessage.Message?.ShipStaticData ||
+      aisMessage.Message?.StaticDataReport ||
+      aisMessage.MessageType === "ShipStaticData"
+    ) {
+      upsertAisStaticData(aisMessage);
+    }
+  } catch (error) {
+    console.warn("Message AIS ignore", error);
+  }
+}
+
+function disconnectAisStream(options = {}) {
+  const { notifyRelay = true } = options;
   if (aisSocket) {
     aisSocket.onclose = null;
     aisSocket.onerror = null;
@@ -2117,90 +2164,83 @@ function disconnectAisStream() {
     aisSocket.close();
   }
   aisSocket = null;
+  stopRelayEventSource();
+  if (notifyRelay) {
+    fetch(`${aisRelayBaseUrl}/disconnect`, { method: "POST" }).catch(() => {});
+  }
   aisConnected = false;
   document.getElementById("toggleAis")?.classList.remove("active");
   setAisStatus(liveVessels.length ? "AIS pause" : "AIS requis", false);
-  setAisMessage("Flux AISStream coupe. Les dernieres pistes live restent visibles.");
+  setAisMessage("Flux AIS coupe. Les dernieres pistes live restent visibles.");
   renderFleetList();
 }
 
-function connectAisStream() {
-  const apiKeyInput = document.getElementById("aisApiKey");
+async function connectAisStream() {
+  const sourceInput = document.getElementById("aisSource");
   const scopeInput = document.getElementById("aisScope");
-  const apiKey = apiKeyInput.value.trim();
+  const source = sourceInput?.value === "demo" ? "auto" : sourceInput?.value || "auto";
   const scope = scopeInput.value;
 
-  if (!apiKey) {
-    setAisMessage("Colle ta cle API AISStream pour lancer le flux live.");
-    apiKeyInput.focus();
+  localStorage.setItem("coss-watch-ais-scope", scope);
+  localStorage.setItem("coss-watch-ais-source", source);
+  disconnectAisStream({ notifyRelay: false });
+  setAisStatus("Connexion AIS...", false);
+  setAisMessage("Connexion au service AIS local securise...");
+
+  try {
+    aisRelaySource = new EventSource(`${aisRelayBaseUrl}/events`);
+  } catch (error) {
+    setAisStatus("AIS erreur", false);
+    setAisMessage("Relais AIS indisponible. Lance le service local AIS relay.");
     return;
   }
 
-  localStorage.setItem("coss-watch-ais-key", apiKey);
-  localStorage.setItem("coss-watch-ais-scope", scope);
-  disconnectAisStream();
-  setAisStatus("Connexion AIS...", false);
-  setAisMessage("Connexion au flux AISStream en cours...");
-
-  aisSocket = new WebSocket("wss://stream.aisstream.io/v0/stream");
-  aisSocket.addEventListener("open", () => {
-    const subscription = {
-      APIKey: apiKey,
-      BoundingBoxes: aisBoundingBoxes(scope),
-      FilterMessageTypes: ["PositionReport", "ShipStaticData"],
-    };
-    aisSocket.send(JSON.stringify(subscription));
-    aisConnected = true;
-    document.getElementById("toggleAis")?.classList.add("active");
-    setAisStatus(`AIS live | ${scope === "world" ? "monde" : scope === "pacific" ? "Pacifique" : "NC"}`, true);
-    setAisMessage("Flux AISStream actif. Les nouvelles positions apparaissent automatiquement.");
-    renderFleetList();
-  });
-
-  aisSocket.addEventListener("message", async (event) => {
+  aisRelaySource.onmessage = (event) => {
     try {
-      let payload;
-      if (typeof event.data === "string") {
-        payload = event.data;
-      } else if (event.data && typeof event.data.text === "function") {
-        payload = await event.data.text();
-      } else if (event.data instanceof ArrayBuffer) {
-        payload = new TextDecoder().decode(event.data);
-      } else {
-        payload = String(event.data);
+      const packet = JSON.parse(event.data);
+      if (packet.kind === "ais") {
+        handleAisPayload(packet.message, packet.source);
+        return;
       }
-      const aisMessage = JSON.parse(payload);
-      if (aisMessage.Message?.PositionReport || aisMessage.Message?.StandardClassBPositionReport) {
-        upsertAisPosition(aisMessage);
-      } else if (aisMessage.Message?.ShipStaticData || aisMessage.Message?.StaticDataReport || aisMessage.MessageType === "ShipStaticData") {
-        upsertAisStaticData(aisMessage);
+      if (packet.kind === "status" && packet.state === "connected") {
+        aisConnected = true;
+        document.getElementById("toggleAis")?.classList.add("active");
+        setAisStatus(`AIS live | ${packet.source || "AIS"}`, true);
+        setAisMessage("Flux AIS reel actif via backend local.");
+        renderFleetList();
+      } else if (packet.kind === "error") {
+        setAisStatus("AIS erreur", false);
+        setAisMessage(packet.message || "Erreur AIS.");
       }
     } catch (error) {
-      console.warn("Message AISStream ignore", error);
+      console.warn("Paquet AIS ignore", error);
     }
-  });
+  };
 
-  aisSocket.addEventListener("error", () => {
-    setAisStatus("AIS erreur", false);
-    setAisMessage("Erreur AISStream. Verifie la cle, la connexion ou reduis la zone de reception.");
-  });
-
-  aisSocket.addEventListener("close", () => {
-    if (aisConnected) {
-      setAisStatus("AIS coupe", false);
-      setAisMessage("Flux AISStream ferme. Tu peux reconnecter quand tu veux.");
-    }
+  aisRelaySource.onerror = () => {
     aisConnected = false;
-    document.getElementById("toggleAis")?.classList.remove("active");
-  });
+    setAisStatus("AIS erreur", false);
+    setAisMessage("Relais AIS indisponible. Demarre AIS relay puis reconnecte.");
+  };
+
+  try {
+    await relayRequest("/connect", { source, scope });
+  } catch (error) {
+    stopRelayEventSource();
+    aisConnected = false;
+    setAisStatus("AIS erreur", false);
+    setAisMessage("Connexion au relais impossible. Verifie AIS relay et .env.");
+  }
 }
 
 function restoreAisSettings() {
-  const apiKeyInput = document.getElementById("aisApiKey");
+  const sourceInput = document.getElementById("aisSource");
   const scopeInput = document.getElementById("aisScope");
-  const savedKey = localStorage.getItem("coss-watch-ais-key");
   const savedScope = localStorage.getItem("coss-watch-ais-scope");
-  if (savedKey) apiKeyInput.value = savedKey;
+  const savedSource = localStorage.getItem("coss-watch-ais-source");
+  localStorage.removeItem("coss-watch-ais-key");
+  if (savedSource && savedSource !== "demo" && sourceInput) sourceInput.value = savedSource;
+  if (savedSource === "demo") localStorage.setItem("coss-watch-ais-source", "auto");
   if (savedScope) scopeInput.value = savedScope;
 }
 

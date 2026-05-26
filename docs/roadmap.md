@@ -2,14 +2,14 @@
 
 ## Vision
 
-COSS Watch NC est une plateforme gratuite et open source de surveillance maritime pour la zone Nouvelle-Caledonie. Le prototype commence avec des donnees simulees afin de valider l'interface et les workflows avant de connecter une source AIS reelle.
+COSS Watch NC est une plateforme gratuite et open source de surveillance maritime pour la zone Nouvelle-Caledonie. L'application doit privilegier les pistes AIS reelles issues de sources gratuites ou locales.
 
 ## Version 0.1 - Prototype web
 
 - Carte centree sur la Nouvelle-Caledonie.
-- Navires simules avec mouvement temps reel.
+- Connexion a des pistes AIS reelles via backend local.
 - Mode globe 3D mondial type Google Earth avec CesiumJS.
-- Routes maritimes mondiales et trafic simule multi-zones.
+- Routes maritimes mondiales et trafic AIS reel lorsque la source est disponible.
 - Connexion AISStream live configurable localement.
 - Filtres par type et par statut.
 - Fiche navire operationnelle.
@@ -27,7 +27,7 @@ COSS Watch NC est une plateforme gratuite et open source de surveillance maritim
 - Stockage PostgreSQL/PostGIS.
 - Historique des positions.
 - Moteur d'alertes geographiques.
-- Simulateur AIS cote serveur.
+- Sources AIS gratuites ou locales cote serveur.
 - WebSocket pour le temps reel.
 
 ## Version 0.3 - Donnees ouvertes
